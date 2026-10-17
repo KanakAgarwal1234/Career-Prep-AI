@@ -11,6 +11,9 @@ next-env.d.ts
 /public/pdf.worker.min.mjs
 /public/pdfjs/
 
+# supabase cli scratch
+/supabase/.temp/
+
 # env
 .env
 .env*.local

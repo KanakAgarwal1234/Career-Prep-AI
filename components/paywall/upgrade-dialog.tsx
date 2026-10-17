@@ -8,10 +8,11 @@ import { Button } from "@/components/ui/button";
 import { useApp } from "@/components/providers/app-provider";
 import { PLANS, PRO_INTERVAL, PRO_PRICE } from "@/lib/pricing";
 
-export async function startCheckout(user: { id: string; email: string }) {
+/** `authHeaders` carries the Supabase access token — the server takes the buyer from it, not from the body. */
+export async function startCheckout(user: { id: string; email: string }, authHeaders: Record<string, string> = {}) {
   const res = await fetch("/api/checkout", {
     method: "POST",
-    headers: { "content-type": "application/json" },
+    headers: { "content-type": "application/json", ...authHeaders },
     body: JSON.stringify({ userId: user.id, email: user.email, returnPath: window.location.pathname }),
   });
   const data = (await res.json()) as { url?: string; error?: string };
@@ -20,7 +21,7 @@ export async function startCheckout(user: { id: string; email: string }) {
 }
 
 export function UpgradeDialog({ open, onOpenChange, reason }: { open: boolean; onOpenChange: (o: boolean) => void; reason?: string }) {
-  const { requireAuth, plan } = useApp();
+  const { requireAuth, plan, authHeaders } = useApp();
   const [busy, setBusy] = React.useState(false);
   const pro = PLANS[1];
 
@@ -30,7 +31,7 @@ export function UpgradeDialog({ open, onOpenChange, reason }: { open: boolean; o
     if (!user) return;
     setBusy(true);
     try {
-      await startCheckout(user);
+      await startCheckout(user, await authHeaders());
     } catch (err) {
       toast.error("Couldn't start checkout", { description: (err as Error).message });
       setBusy(false);

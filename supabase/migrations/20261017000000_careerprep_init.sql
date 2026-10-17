@@ -1,5 +1,5 @@
 -- CareerPrep AI — Supabase schema
--- Run in the Supabase SQL editor (or `supabase db push`). Idempotent.
+-- Applied by `npm run setup` (supabase db push), or paste into the SQL editor. Idempotent.
 
 -- ---------------------------------------------------------------------------
 -- Profiles: one row per auth user. `plan` is written ONLY by the server

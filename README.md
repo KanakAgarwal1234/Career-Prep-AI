@@ -17,10 +17,36 @@ npm install          # postinstall copies the pdf.js worker, fonts and cmaps int
 npm run dev          # http://localhost:3000
 ```
 
+### Go live (Supabase + Stripe + Vercel)
+
+Run this once **on your own machine**, from `careerprep-ai/`:
+
+```bash
+npm run setup
+```
+
+It asks for each key one at a time (secrets are hidden while you type) and then:
+
+1. writes `careerprep-ai/.env.local` (git-ignored, owner-only permissions)
+2. pushes the database schema to Supabase (`supabase db push`, applying `supabase/migrations/`)
+3. creates or updates the Vercel project with **Root Directory = `careerprep-ai`**, uploads every env var and deploys
+4. creates the Stripe Pro price (if you don't have one) and the webhook, and points Supabase Auth's redirect URLs at your production domain
+
+It's safe to re-run: press Enter to keep a value you already entered. Tokens it only needs once (Vercel, Supabase access token, database URL) are never saved.
+
+Only want the schema? From the repo root:
+
+```bash
+npx -y supabase@2.121.0 db push --workdir careerprep-ai --db-url "<Supabase → Connect → Session pooler URI>"
+```
+
+(Percent-encode the password if it contains `@ # / ?`; `npm run setup` does this for you.)
+
 Click **Try a sample resume** on `/review` to see the audit on a resume with deliberate flaws (`public/sample-resume.pdf`, regenerate with `npm run sample-resume`).
 
 | Script | What it does |
 |---|---|
+| `npm run setup` | One-time keys + Supabase schema + Vercel + Stripe wiring (see above) |
 | `npm run build` / `start` | Production build and serve |
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm run smoke:analyze [-- file.pdf] [--lines]` | Runs the offline ATS engine on a PDF from the terminal |
@@ -42,9 +68,9 @@ Every variable is optional. See [`.env.example`](.env.example).
 | Auth, storage, history, server-checked Pro plan | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` | Local demo accounts |
 | Payments | `STRIPE_SECRET_KEY`, `STRIPE_PRICE_ID`, `STRIPE_WEBHOOK_SECRET` | Mock checkout that grants Pro instantly |
 
-**Supabase:** run [`supabase/schema.sql`](supabase/schema.sql). It creates the `profiles`, `resume_reviews` and `interviews` tables, row-level security, a trigger that creates a profile for each new user, and a private `resumes` storage bucket. Users can't change their own `plan`; only the Stripe webhook can, using the service role.
+**Supabase:** the schema lives in [`supabase/migrations/`](supabase/migrations/) (applied by `npm run setup`). It creates the `profiles`, `resume_reviews` and `interviews` tables, row-level security, a trigger that creates a profile for each new user, and a private `resumes` storage bucket. Users can't change their own `plan`; only the server can, using the service role.
 
-**Stripe:** create a recurring price, set `STRIPE_PRICE_ID`, and point a webhook at `/api/stripe/webhook` with these events: `checkout.session.completed`, `customer.subscription.updated` and `customer.subscription.deleted`.
+**Stripe:** `npm run setup` creates the recurring price and the webhook (`/api/stripe/webhook`, events `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`). To do it by hand, set `STRIPE_PRICE_ID` and `STRIPE_WEBHOOK_SECRET` yourself.
 
 ## How it works
 
@@ -64,7 +90,8 @@ Every variable is optional. See [`.env.example`](.env.example).
 ### Paywall
 
 - The ATS audit needs no account. Saving or downloading the full report asks the user to sign in.
-- The interview server limits each session to **3 questions on trial and 7 on Pro**, based on the verified plan (Supabase profile). In demo mode, the browser sends the plan itself (`x-cp-plan`), so configure Supabase before taking real payments.
+- The interview server limits each session to **3 questions on trial and 7 on Pro**. With Supabase configured, the plan comes only from `profiles.plan`, read with the service role after Supabase Auth verifies the caller's access token. Headers, cookies and localStorage are ignored, and if the service-role key is missing every caller is treated as trial. Checkout takes the buyer from the verified token, never from the request body.
+- In demo mode (no Supabase at all), the browser's own `x-cp-plan` header is honoured so the paywall can be tried offline.
 - On trial, the delivery deep-dive is blurred behind an upgrade prompt, and the upgrade button opens Stripe Checkout.
 
 ## API
@@ -93,12 +120,13 @@ lib/interview/           question bank, adaptive planner, answer analysis, deliv
 lib/ai/                  model selection + LLM upgrades (resume, next question, evaluation)
 lib/speech/              TTS, live transcription, mic level + voice activity
 lib/export/              jsPDF report builders
-supabase/schema.sql      tables, RLS, storage bucket
+scripts/setup.mjs        one-time go-live setup (npm run setup)
+supabase/migrations/     tables, RLS, storage bucket
 ```
 
 ## Deploying to Vercel
 
-This app lives in a subfolder. When importing the repo, set **Root Directory** to `careerprep-ai` and add whichever environment variables you need.
+This app lives in a subfolder, so the Vercel project needs **Root Directory = `careerprep-ai`**. That's a project setting: `vercel.json` has no field for it. `npm run setup` sets it through the Vercel API, so there's nothing to change in the dashboard. A root-level `vercel.json` is deliberately left out because it would also apply to any other Vercel project built from this repo.
 
 ## Known limitations
 

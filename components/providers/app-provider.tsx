@@ -119,9 +119,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const activatePro = React.useCallback(() => {
+    const u = userRef.current;
+    // Real accounts: the plan lives in Supabase (written by the server) — re-read it.
+    if (getSupabase() && u && !u.demo) {
+      loadPlan(u);
+      return;
+    }
     writeJSON(KEYS.plan, "pro");
     setPlan("pro");
-  }, []);
+  }, [loadPlan]);
 
   const openUpgrade = React.useCallback((reason?: string) => {
     setUpgradeReason(reason);

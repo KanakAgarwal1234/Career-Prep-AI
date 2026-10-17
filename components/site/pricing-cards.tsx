@@ -12,7 +12,7 @@ import { PLANS } from "@/lib/pricing";
 import { cn } from "@/lib/utils";
 
 export function PricingCards() {
-  const { plan, requireAuth } = useApp();
+  const { plan, requireAuth, authHeaders } = useApp();
   const [busy, setBusy] = React.useState(false);
 
   React.useEffect(() => {
@@ -24,7 +24,7 @@ export function PricingCards() {
     if (!user) return;
     setBusy(true);
     try {
-      await startCheckout(user);
+      await startCheckout(user, await authHeaders());
     } catch (err) {
       toast.error("Couldn't start checkout", { description: (err as Error).message });
       setBusy(false);
