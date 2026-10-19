@@ -12,7 +12,7 @@ Two career tools in one Next.js app:
 ## Quick start
 
 ```bash
-git clone https://github.com/KanakAgarwal1234/careerprep-ai.git && cd careerprep-ai
+git clone https://github.com/KanakAgarwal1234/Career-Prep-AI.git && cd Career-Prep-AI
 npm install          # postinstall copies the pdf.js worker, fonts and cmaps into /public
 npm run dev          # http://localhost:3000
 ```
