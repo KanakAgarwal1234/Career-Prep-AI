@@ -12,14 +12,14 @@ Two career tools in one Next.js app:
 ## Quick start
 
 ```bash
-cd careerprep-ai
+git clone https://github.com/KanakAgarwal1234/careerprep-ai.git && cd careerprep-ai
 npm install          # postinstall copies the pdf.js worker, fonts and cmaps into /public
 npm run dev          # http://localhost:3000
 ```
 
 ### Go live (Supabase + Stripe + Vercel)
 
-Run this once **on your own machine**, from `careerprep-ai/`:
+Run this once **on your own machine**, from the repo folder:
 
 ```bash
 npm run setup
@@ -27,17 +27,17 @@ npm run setup
 
 It asks for each key one at a time (secrets are hidden while you type) and then:
 
-1. writes `careerprep-ai/.env.local` (git-ignored, owner-only permissions)
+1. writes `.env.local` (git-ignored, owner-only permissions)
 2. pushes the database schema to Supabase (`supabase db push`, applying `supabase/migrations/`)
-3. creates or updates the Vercel project with **Root Directory = `careerprep-ai`**, uploads every env var and deploys
+3. creates or updates the Vercel project, uploads every env var and deploys
 4. creates the Stripe Pro price (if you don't have one) and the webhook, and points Supabase Auth's redirect URLs at your production domain
 
 It's safe to re-run: press Enter to keep a value you already entered. Tokens it only needs once (Vercel, Supabase access token, database URL) are never saved.
 
-Only want the schema? From the repo root:
+Only want the schema?
 
 ```bash
-npx -y supabase@2.121.0 db push --workdir careerprep-ai --db-url "<Supabase → Connect → Session pooler URI>"
+npx -y supabase@2.121.0 db push --db-url "<Supabase → Connect → Session pooler URI>"
 ```
 
 (Percent-encode the password if it contains `@ # / ?`; `npm run setup` does this for you.)
@@ -126,7 +126,7 @@ supabase/migrations/     tables, RLS, storage bucket
 
 ## Deploying to Vercel
 
-This app lives in a subfolder, so the Vercel project needs **Root Directory = `careerprep-ai`**. That's a project setting: `vercel.json` has no field for it. `npm run setup` sets it through the Vercel API, so there's nothing to change in the dashboard. A root-level `vercel.json` is deliberately left out because it would also apply to any other Vercel project built from this repo.
+Import the repo at vercel.com/new and click **Deploy** (Next.js is detected automatically), or let `npm run setup` create the project, upload the env vars and deploy for you.
 
 ## Known limitations
 

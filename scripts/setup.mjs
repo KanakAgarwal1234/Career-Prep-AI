@@ -1,14 +1,13 @@
 #!/usr/bin/env node
 /**
- * CareerPrep AI — one-time setup. Run on your own machine from careerprep-ai/:
+ * CareerPrep AI — one-time setup. Run on your own machine from the repo root:
  *
  *   npm run setup
  *
  * Asks for each key one at a time (secrets are hidden as you type), then:
- *   1. writes careerprep-ai/.env.local
+ *   1. writes .env.local
  *   2. pushes the database schema to Supabase (supabase db push)
- *   3. creates/updates the Vercel project with Root Directory = careerprep-ai,
- *      uploads the env vars and deploys
+ *   3. creates/updates the Vercel project, uploads the env vars and deploys
  *   4. creates the Stripe Pro price + webhook and points Supabase Auth at
  *      the production URL
  *
@@ -22,9 +21,7 @@ import { createInterface } from "node:readline";
 import { fileURLToPath } from "node:url";
 
 const APP_DIR = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const REPO_DIR = resolve(APP_DIR, "..");
 const ENV_PATH = join(APP_DIR, ".env.local");
-const ROOT_DIRECTORY = "careerprep-ai";
 const SUPABASE_CLI = "supabase@2.121.0";
 const WEBHOOK_EVENTS = ["checkout.session.completed", "customer.subscription.updated", "customer.subscription.deleted"];
 
@@ -178,7 +175,7 @@ function run(cmd, args, opts = {}) {
 }
 
 function gitRepoSlug() {
-  const r = spawnSync("git", ["remote", "get-url", "origin"], { cwd: REPO_DIR, encoding: "utf8" });
+  const r = spawnSync("git", ["remote", "get-url", "origin"], { cwd: APP_DIR, encoding: "utf8" });
   const m = (r.stdout || "").trim().match(/github\.com[:/]([^/]+\/[^/.]+?)(?:\.git)?$/i);
   return m ? m[1] : null;
 }
@@ -197,7 +194,7 @@ function encodeDbUrl(raw) {
 /* ------------------------------------------------------------------ */
 
 async function collectKeys(env) {
-  step(1, "Keys → careerprep-ai/.env.local");
+  step(1, "Keys → .env.local");
   console.log(dim("  Secrets are hidden as you type. Type skip to leave one empty."));
 
   env.NEXT_PUBLIC_SUPABASE_URL = (await askKey(env, "NEXT_PUBLIC_SUPABASE_URL", {
@@ -252,7 +249,7 @@ async function collectKeys(env) {
   });
 
   writeEnv(env);
-  ok(`Saved ${ENV_PATH.replace(REPO_DIR + "/", "")} (git-ignored)`);
+  ok("Saved .env.local (git-ignored)");
 }
 
 async function createStripePrice(env) {
@@ -313,7 +310,7 @@ async function pushSchema() {
 }
 
 async function vercelProject(env, state) {
-  step(3, "Vercel project (Root Directory = careerprep-ai) + env vars + deploy");
+  step(3, "Vercel project + env vars + deploy");
   if (!(await confirm("  Set up Vercel from here?"))) return;
   console.log(dim("  vercel.com/account/tokens → Create token (scope: your account or team). Not saved anywhere."));
   const token = await ask("  Vercel token: ", { secret: true });
@@ -325,12 +322,12 @@ async function vercelProject(env, state) {
   let project;
   try {
     project = await http("GET", q(`/v9/projects/${encodeURIComponent(name)}`), { token });
-    project = await http("PATCH", q(`/v9/projects/${project.id}`), { token, json: { rootDirectory: ROOT_DIRECTORY, framework: "nextjs" } });
-    ok(`Updated project “${name}” → Root Directory ${ROOT_DIRECTORY}`);
+    project = await http("PATCH", q(`/v9/projects/${project.id}`), { token, json: { rootDirectory: null, framework: "nextjs" } });
+    ok(`Using existing project “${name}”`);
   } catch (err) {
     if (err.status !== 404) return fail(`Vercel: ${err.message}`);
     const repo = gitRepoSlug();
-    const base = { name, framework: "nextjs", rootDirectory: ROOT_DIRECTORY };
+    const base = { name, framework: "nextjs" };
     try {
       project = await http("POST", q("/v11/projects"), { token, json: repo ? { ...base, gitRepository: { type: "github", repo } } : base });
       ok(`Created project “${name}”${repo ? ` linked to ${repo} (pushes to main auto-deploy)` : ""}`);
@@ -370,13 +367,13 @@ async function syncVercelEnv(env, state) {
   }
 }
 
-/** Deploys from the repo root; Vercel builds careerprep-ai/ because of the project's Root Directory. */
+/** Deploys this folder to the project created above. */
 function deploy(state) {
   const { token, team, project } = state.vercel;
   const args = ["-y", "vercel@latest", "deploy", "--prod", "--yes", `--token=${token}`];
   if (team) args.push(`--scope=${team}`);
-  // Env-var linking (instead of writing .vercel/project.json) leaves any existing link in this repo untouched.
-  const done = run("npx", args, { cwd: REPO_DIR, env: { ...process.env, VERCEL_ORG_ID: project.accountId, VERCEL_PROJECT_ID: project.id } });
+  // Env-var linking (instead of writing .vercel/project.json) leaves any existing link untouched.
+  const done = run("npx", args, { cwd: APP_DIR, env: { ...process.env, VERCEL_ORG_ID: project.accountId, VERCEL_PROJECT_ID: project.id } });
   if (done) ok("Deployed");
   else fail("Deploy failed — see the Vercel output above.");
   return done;

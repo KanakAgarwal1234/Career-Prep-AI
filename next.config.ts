@@ -4,8 +4,6 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   agentRules: false,
-  // This app lives in a sub-folder of a repo that has its own lockfile.
-  turbopack: { root: __dirname },
   async headers() {
     return [
       {
