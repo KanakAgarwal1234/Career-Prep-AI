@@ -62,7 +62,7 @@ Every variable is optional. See [`.env.example`](.env.example).
 
 | Capability | Variables | Without them |
 |---|---|---|
-| LLM critique and rewrites | `OPENAI_API_KEY` (default `gpt-4o`) or `ANTHROPIC_API_KEY` (default `claude-sonnet-5-5`), optional `AI_PROVIDER`, `*_MODEL` | Rule-based engines |
+| LLM critique and rewrites | `GOOGLE_GENERATIVE_AI_API_KEY` (free Gemini tier, default `gemini-2.5-flash`), `OPENAI_API_KEY` (default `gpt-4o`) or `ANTHROPIC_API_KEY` (default `claude-sonnet-5-5`), optional `AI_PROVIDER`, `*_MODEL` | Rule-based engines |
 | HD interviewer voice | `ELEVENLABS_API_KEY` or `OPENAI_API_KEY` | Browser `speechSynthesis` |
 | Speech-to-text fallback (for Firefox and similar) | `OPENAI_API_KEY` (Whisper) | Typed answers |
 | Auth, storage, history, server-checked Pro plan | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` | Local demo accounts |

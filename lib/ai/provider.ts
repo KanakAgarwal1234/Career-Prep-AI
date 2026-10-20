@@ -2,10 +2,11 @@ import "server-only";
 import type { LanguageModel } from "ai";
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { createOpenAI } from "@ai-sdk/openai";
+import { createGoogleGenerativeAI } from "@ai-sdk/google";
 
 export interface ResolvedModel {
   model: LanguageModel;
-  provider: "openai" | "anthropic";
+  provider: "openai" | "anthropic" | "google";
   modelId: string;
 }
 
@@ -18,7 +19,15 @@ export function getModel(): ResolvedModel | null {
   const pref = process.env.AI_PROVIDER?.toLowerCase();
   const openaiKey = process.env.OPENAI_API_KEY;
   const anthropicKey = process.env.ANTHROPIC_API_KEY;
+  const googleKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.GEMINI_API_KEY;
   if (pref === "mock" || pref === "offline") return null;
+
+  // Google Gemini — free tier (aistudio.google.com/apikey), no card needed.
+  const useGoogle = googleKey && (pref === "google" || pref === "gemini" || (!openaiKey && !anthropicKey));
+  if (useGoogle) {
+    const modelId = process.env.GOOGLE_MODEL || "gemini-2.5-flash";
+    return { model: createGoogleGenerativeAI({ apiKey: googleKey })(modelId), provider: "google", modelId };
+  }
 
   const useAnthropic = anthropicKey && (pref === "anthropic" || !openaiKey);
   if (useAnthropic) {

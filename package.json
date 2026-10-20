@@ -2,7 +2,7 @@
   "name": "careerprep-ai",
   "version": "0.1.0",
   "private": true,
-  "description": "CareerPrep AI \u2014 free visual ATS resume audit + adaptive AI voice mock interviews.",
+  "description": "CareerPrep AI — free visual ATS resume audit + adaptive AI voice mock interviews.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^4.0.82",
+    "@ai-sdk/google": "^4.0.101",
     "@ai-sdk/openai": "^4.0.96",
     "@supabase/supabase-js": "^2.118.0",
     "ai": "^7.0.143",

@@ -99,7 +99,7 @@ function readEnv() {
 const GROUPS = [
   ["Supabase", ["NEXT_PUBLIC_SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_ANON_KEY", "SUPABASE_SERVICE_ROLE_KEY"]],
   ["Stripe", ["STRIPE_SECRET_KEY", "STRIPE_PRICE_ID", "STRIPE_WEBHOOK_SECRET", "STRIPE_MODE", "NEXT_PUBLIC_PRO_PRICE_LABEL", "NEXT_PUBLIC_PRO_INTERVAL_LABEL"]],
-  ["AI & voice", ["OPENAI_API_KEY", "ANTHROPIC_API_KEY", "ELEVENLABS_API_KEY"]],
+  ["AI & voice", ["GOOGLE_GENERATIVE_AI_API_KEY", "OPENAI_API_KEY", "ANTHROPIC_API_KEY", "ELEVENLABS_API_KEY"]],
   ["Site", ["NEXT_PUBLIC_SITE_URL"]],
 ];
 
@@ -229,6 +229,12 @@ async function collectKeys(env) {
   if (!env.STRIPE_PRICE_ID && env.STRIPE_SECRET_KEY) await createStripePrice(env);
   else if (env.STRIPE_PRICE_ID && env.STRIPE_SECRET_KEY) await labelFromPrice(env);
 
+  env.GOOGLE_GENERATIVE_AI_API_KEY = await askKey(env, "GOOGLE_GENERATIVE_AI_API_KEY", {
+    label: "Google Gemini API key (free)",
+    hint: "aistudio.google.com/apikey → Create API key. Free tier, no card. Powers the AI critique, rewrites and interviewer.",
+    secret: true,
+    optional: true,
+  });
   env.OPENAI_API_KEY = await askKey(env, "OPENAI_API_KEY", {
     label: "OpenAI API key",
     hint: "platform.openai.com → API keys. Enables AI rewrites + critique, HD voice and Whisper. Skip to stay offline.",
